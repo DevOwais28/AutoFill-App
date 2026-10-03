@@ -183,9 +183,13 @@ export default function JobWebViewScreen({
         setLoading(false);
         setStatus('Form filled! Review and submit manually.');
         if (onProgress) onProgress('Form filled! Proceeding...', 90);
+        // If it was a popup/modal and didn't trigger page load, try extracting again in 3s
+        setTimeout(injectExtractionScript, 3000);
       } else if (data.type === "CLICKED_APPLY") {
         setStatus('Clicking Apply Now...');
         if (onProgress) onProgress('Opening application form...', 30);
+        // Wait for the popup/modal to render, then extract again
+        setTimeout(injectExtractionScript, 3500);
       } else if (data.type === "ERROR") {
         console.error("WebView Error:", data.message);
       }
