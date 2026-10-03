@@ -116,6 +116,7 @@ export default function JobWebViewScreen({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-API-KEY': 'default-dev-secret-key-12345',
             'Authorization': `Bearer ${session?.access_token}`
           },
           body: JSON.stringify({
@@ -177,7 +178,12 @@ export default function JobWebViewScreen({
         } else {
            setLoading(false);
            setStatus('AI analysis failed.');
-           Alert.alert('Analysis Failed', result.error || 'Unknown error');
+           
+           // Handle FastAPI HTTP Exceptions which return {"detail": "..."}
+           const errorMsg = result.error || result.message || 
+                            (typeof result.detail === 'string' ? result.detail : JSON.stringify(result.detail)) || 
+                            'Unknown error';
+           Alert.alert('Analysis Failed', errorMsg);
         }
       } else if (data.type === "FILL_COMPLETE") {
         setLoading(false);
