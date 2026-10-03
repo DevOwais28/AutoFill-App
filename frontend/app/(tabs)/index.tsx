@@ -260,7 +260,7 @@ export default function HomeScreen() {
 
     // Load saved session cookies from AsyncStorage
     const cookieData = await AsyncStorage.getItem('universal_cookies');
-    const allCookies = cookieData ? JSON.parse(cookieData) : {};
+    const allCookies = cookieData ? JSON.parse(cookieData as string) : {};
     const cookies = findCookiesForUrl(allCookies, jobUrl.trim());
 
     // Start the in-app progress bar
@@ -277,7 +277,7 @@ export default function HomeScreen() {
       trigger: null,
     });
 
-    applyToJob(jobUrl.trim(), profile, cookies, threadId)
+    applyToJob(jobUrl.trim(), profile as any, cookies, threadId)
       .then(async (result) => {
         setLoading(false);
 
