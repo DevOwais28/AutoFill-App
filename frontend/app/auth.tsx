@@ -1,94 +1,74 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../src/lib/supabase';
 import { Colors } from '../src/theme/colors';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
+import { FontAwesome } from '@expo/vector-icons';
+
+// Required to finalize WebBrowser session on Android
+WebBrowser.maybeCompleteAuthSession();
 
 export default function AuthScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  async function signInWithEmail() {
-    setLoading(true);
-    const { error, data } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    });
-    setLoading(false);
+  async function signInWithGoogle() {
+    try {
+      setLoading(true);
+      const redirectUrl = Linking.createURL('/(tabs)/');
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: true,
+        },
+      });
 
-    if (error) {
-      Alert.alert('Sign In Failed', error.message);
-    } else if (data.session) {
-      router.back();
-    }
-  }
-
-  async function signUpWithEmail() {
-    setLoading(true);
-    const { error, data } = await supabase.auth.signUp({
-      email: email,
-      password: password,
-    });
-    setLoading(false);
-
-    if (error) {
-      Alert.alert('Sign Up Failed', error.message);
-    } else if (data.session) {
-      router.back();
-    } else {
-      Alert.alert('Success', 'Check your email for the confirmation link.');
+      if (error) throw error;
+      
+      if (data?.url) {
+        const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+        if (res.type === 'success') {
+          const { url } = res;
+          const { error: sessionError } = await supabase.auth.getSessionFromUrl(url);
+          if (sessionError) throw sessionError;
+          router.back();
+        }
+      }
+    } catch (e: any) {
+      Alert.alert("Google Sign-In Failed", e.message || 'An unknown error occurred.');
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Welcome Back</Text>
-        <Text style={styles.subtitle}>Sign in to automate your job applications.</Text>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            onChangeText={(text) => setEmail(text)}
-            value={email}
-            placeholder="email@address.com"
-            placeholderTextColor="#888"
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
-            onChangeText={(text) => setPassword(text)}
-            value={password}
-            secureTextEntry={true}
-            placeholder="Password"
-            placeholderTextColor="#888"
-            autoCapitalize="none"
-          />
-        </View>
+        <Text style={styles.title}>Welcome to AutoFill</Text>
+        <Text style={styles.subtitle}>Sign in securely with Google to sync your candidate profile and track your job applications.</Text>
 
         <TouchableOpacity 
-          style={styles.primaryButton} 
-          onPress={signInWithEmail} 
+          style={styles.googleButton} 
+          onPress={signInWithGoogle} 
           disabled={loading}
         >
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>Sign In</Text>}
+          {loading ? (
+            <ActivityIndicator color="#000" />
+          ) : (
+            <>
+              <FontAwesome name="google" size={20} color="#000" style={styles.googleIcon} />
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </>
+          )}
         </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.secondaryButton} 
-          onPress={signUpWithEmail} 
-          disabled={loading}
-        >
-          <Text style={styles.secondaryButtonText}>Create an Account</Text>
-        </TouchableOpacity>
+        
+        <Text style={styles.trustText}>
+          We only use your email to sync your job applications. No spam, ever.
+        </Text>
       </View>
     </View>
   );
@@ -107,60 +87,45 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     borderColor: Colors.border,
+    alignItems: 'center',
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
     color: '#fff',
-    marginBottom: 8,
+    marginBottom: 12,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#aaa',
-    marginBottom: 32,
+    marginBottom: 40,
+    textAlign: 'center',
+    lineHeight: 22,
   },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    color: '#ccc',
-    marginBottom: 8,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1,
-    borderColor: Colors.border,
+  googleButton: {
+    backgroundColor: '#fff',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     borderRadius: 12,
-    padding: 16,
-    color: '#fff',
-    fontSize: 16,
-  },
-  primaryButton: {
-    backgroundColor: Colors.accent,
-    padding: 16,
-    borderRadius: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
+    justifyContent: 'center',
+    width: '100%',
   },
-  primaryButtonText: {
-    color: '#fff',
+  googleIcon: {
+    marginRight: 12,
+  },
+  googleButtonText: {
+    color: '#000',
     fontSize: 16,
     fontWeight: '600',
   },
-  secondaryButton: {
-    backgroundColor: 'transparent',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  secondaryButtonText: {
-    color: '#ccc',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  trustText: {
+    marginTop: 24,
+    color: '#666',
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
+  }
 });
