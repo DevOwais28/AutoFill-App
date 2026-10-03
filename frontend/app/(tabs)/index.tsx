@@ -241,16 +241,10 @@ export default function HomeScreen() {
     }
 
     // ────────────────────────────────────────────────────────────────────────
-    // NEW ARCHITECTURE: Auto-WebView for ALL jobs IN THE BACKGROUND
-    // This ensures Glassdoor, Rozee, and any other site bypasses IP blocks using the local phone.
-    setBackgroundUrl(jobUrl.trim());
+    // NEW ARCHITECTURE: Temporarily open visibly for debugging!
+    // Instead of hiding it, we will open the WebView on screen so you can SEE what it's stuck on.
+    router.push({ pathname: '/webview', params: { url: jobUrl.trim() } });
     setUrl('');
-    
-    // Show a fake loading progress for the background webview
-    setLoading(true);
-    setActiveProcess({ label: 'Analyzing form via Background Device Worker...', progress: 10, jobUrl: jobUrl.trim() });
-    RNAnimated.timing(progressAnim, { toValue: 0.1, duration: 600, useNativeDriver: false }).start();
-    
     return;
     // ────────────────────────────────────────────────────────────────────────
     
