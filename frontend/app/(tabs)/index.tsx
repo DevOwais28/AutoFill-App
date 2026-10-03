@@ -241,18 +241,17 @@ export default function HomeScreen() {
     }
 
     // ────────────────────────────────────────────────────────────────────────
-    // NEW ARCHITECTURE: Auto-WebView for Indeed and LinkedIn IN THE BACKGROUND
-    if (lowerUrl.includes('indeed.com') || lowerUrl.includes('linkedin.com')) {
-       setBackgroundUrl(jobUrl.trim());
-       setUrl('');
-       
-       // Show a fake loading progress for the background webview
-       setLoading(true);
-       setActiveProcess({ label: 'Analyzing form via Background Device Worker...', progress: 10, jobUrl: jobUrl.trim() });
-       RNAnimated.timing(progressAnim, { toValue: 0.1, duration: 600, useNativeDriver: false }).start();
-       
-       return;
-    }
+    // NEW ARCHITECTURE: Auto-WebView for ALL jobs IN THE BACKGROUND
+    // This ensures Glassdoor, Rozee, and any other site bypasses IP blocks using the local phone.
+    setBackgroundUrl(jobUrl.trim());
+    setUrl('');
+    
+    // Show a fake loading progress for the background webview
+    setLoading(true);
+    setActiveProcess({ label: 'Analyzing form via Background Device Worker...', progress: 10, jobUrl: jobUrl.trim() });
+    RNAnimated.timing(progressAnim, { toValue: 0.1, duration: 600, useNativeDriver: false }).start();
+    
+    return;
     // ────────────────────────────────────────────────────────────────────────
     
     await requestPermissions();
