@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../src/theme/colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../src/lib/supabase';
+import api from '../src/services/api';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://autofill-app-production.up.railway.app';
 
@@ -110,24 +111,14 @@ export default function JobWebViewScreen({
         setLoading(true);
         if (onProgress) onProgress('AI is analyzing form...', 40);
 
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        const response = await fetch(`${API_URL}/jobs/analyze-local`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-KEY': 'default-dev-secret-key-12345',
-            'Authorization': `Bearer ${session?.access_token}`
-          },
-          body: JSON.stringify({
+        const response = await api.post('/jobs/analyze-local', {
             fields: data.fields,
             profile: profile || {},
             saved_answers: profile?.saved_answers || {},
             job_context: { job_title: "Detected Job", company_name: "Detected Company" }
-          })
         });
-
-        const result = await response.json();
+        
+        const result = response.data;
         
         if (result.success && result.agent_response && result.agent_response.answers) {
            setStatus('Filling form...');
@@ -178,12 +169,7 @@ export default function JobWebViewScreen({
         } else {
            setLoading(false);
            setStatus('AI analysis failed.');
-           
-           // Handle FastAPI HTTP Exceptions which return {"detail": "..."}
-           const errorMsg = result.error || result.message || 
-                            (typeof result.detail === 'string' ? result.detail : JSON.stringify(result.detail)) || 
-                            'Unknown error';
-           Alert.alert('Analysis Failed', errorMsg);
+           Alert.alert('Analysis Failed', result.error || result.message || 'Unknown error');
         }
       } else if (data.type === "FILL_COMPLETE") {
         setLoading(false);
@@ -199,8 +185,11 @@ export default function JobWebViewScreen({
       } else if (data.type === "ERROR") {
         console.error("WebView Error:", data.message);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setLoading(false);
+      setStatus('Network error occurred.');
+      Alert.alert('Network Error', e.friendlyMessage || e.response?.data?.detail || e.message || 'Check your connection to the server.');
     }
   };
 
