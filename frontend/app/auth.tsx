@@ -33,8 +33,19 @@ export default function AuthScreen() {
         const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
         if (res.type === 'success') {
           const { url } = res;
-          const { error: sessionError } = await supabase.auth.getSessionFromUrl(url);
-          if (sessionError) throw sessionError;
+          
+          // Supabase implicit grant flow puts tokens in the hash. 
+          // We swap it to '?' so expo-linking can parse them easily.
+          const { queryParams } = Linking.parse(url.replace('#', '?'));
+          
+          if (queryParams?.access_token && queryParams?.refresh_token) {
+            const { error: sessionError } = await supabase.auth.setSession({
+              access_token: queryParams.access_token as string,
+              refresh_token: queryParams.refresh_token as string,
+            });
+            if (sessionError) throw sessionError;
+          }
+          
           router.back();
         }
       }
