@@ -503,6 +503,17 @@ export default function HomeScreen() {
       {backgroundUrl && <JobWebViewScreen hiddenUrl={backgroundUrl} onProgress={(msg, pct) => {
         setActiveProcess(prev => prev ? { ...prev, label: msg, progress: pct } : { label: msg, progress: pct, jobUrl: backgroundUrl });
         RNAnimated.timing(progressAnim, { toValue: pct / 100, duration: 400, useNativeDriver: false }).start();
+        
+        // Show notification so user can track progress while outside the app (e.g. YouTube)
+        Notifications.scheduleNotificationAsync({
+           identifier: 'job_progress_notification',
+           content: {
+              title: 'AutoFill Application',
+              body: `${pct}% - ${msg}`,
+              sound: false,
+           },
+           trigger: null,
+        });
       }} />}
     </KeyboardAvoidingView>
   );
