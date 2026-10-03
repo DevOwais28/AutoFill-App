@@ -74,6 +74,18 @@ export default function JobWebViewScreen({
                  options: options.length > 0 ? options : undefined
               };
            }).filter(Boolean);
+           if (inputs.length === 0) {
+               const btns = Array.from(document.querySelectorAll('button, a'));
+               const target = btns.find(b => {
+                   const txt = b.innerText.toLowerCase().trim();
+                   return txt === 'apply now' || txt === 'easy apply' || txt === 'apply';
+               });
+               if (target && !target.disabled) {
+                   target.click();
+                   window.ReactNativeWebView.postMessage(JSON.stringify({ type: "CLICKED_APPLY" }));
+                   return;
+               }
+           }
 
            window.ReactNativeWebView.postMessage(JSON.stringify({ type: "EXTRACTED_FORM", fields: inputs }));
          } catch (e) {
@@ -171,6 +183,9 @@ export default function JobWebViewScreen({
         setLoading(false);
         setStatus('Form filled! Review and submit manually.');
         if (onProgress) onProgress('Form filled! Proceeding...', 90);
+      } else if (data.type === "CLICKED_APPLY") {
+        setStatus('Clicking Apply Now...');
+        if (onProgress) onProgress('Opening application form...', 30);
       } else if (data.type === "ERROR") {
         console.error("WebView Error:", data.message);
       }
